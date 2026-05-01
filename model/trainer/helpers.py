@@ -47,6 +47,8 @@ def get_dataloader(args):
         from model.dataloader.cub import CUB as Dataset
     elif args.dataset == 'TieredImageNet':
         from model.dataloader.tiered_imagenet import tieredImageNet as Dataset
+    elif args.dataset == 'TLUStates':
+        from model.dataloader.tlu_states import TLUStates as Dataset
     else:
         raise ValueError('Non-supported Dataset.')
 
@@ -81,7 +83,7 @@ def get_dataloader(args):
     
     testset = Dataset('test', args)
     test_sampler = CategoriesSampler(testset.label,
-                            10000, # args.num_eval_episodes,
+                            args.num_test_episodes,
                             args.eval_way, args.eval_shot + args.eval_query)
     test_loader = DataLoader(dataset=testset,
                             batch_sampler=test_sampler,

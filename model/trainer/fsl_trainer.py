@@ -156,7 +156,7 @@ class FSLTrainer(Trainer):
         # evaluation mode
         self.model.load_state_dict(torch.load(osp.join(self.args.save_path, 'max_acc.pth'))['params'])
         self.model.eval()
-        record = np.zeros((10000, 2)) # loss and acc
+        record = np.zeros((args.num_test_episodes, 2)) # loss and acc
         label = torch.arange(args.eval_way, dtype=torch.int16).repeat(args.eval_query)
         label = label.type(torch.LongTensor)
         if torch.cuda.is_available():

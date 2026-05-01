@@ -132,6 +132,12 @@ def postprocess_args(args):
     if not args.augment:
         save_path2 += '-NoAug'
             
+    if args.save_path is not None:
+        # If save_path is provided, we use it directly and don't create subdirectories
+        if not os.path.exists(args.save_path):
+            os.makedirs(args.save_path)
+        return args
+
     if not os.path.exists(os.path.join(args.save_dir, save_path1)):
         os.mkdir(os.path.join(args.save_dir, save_path1))
     args.save_path = os.path.join(args.save_dir, save_path1, save_path2)
@@ -142,13 +148,17 @@ def get_command_line_parser():
     parser.add_argument('--max_epoch', type=int, default=200)
     parser.add_argument('--episodes_per_epoch', type=int, default=100)
     parser.add_argument('--num_eval_episodes', type=int, default=600)
+    parser.add_argument('--num_test_episodes', type=int, default=10000)
     parser.add_argument('--model_class', type=str, default='FEAT', 
                         choices=['MatchNet', 'ProtoNet', 'BILSTM', 'DeepSet', 'GCN', 'FEAT', 'FEATSTAR', 'SemiFEAT', 'SemiProtoFEAT']) # None for MatchNet or ProtoNet
     parser.add_argument('--use_euclidean', action='store_true', default=False)    
     parser.add_argument('--backbone_class', type=str, default='ConvNet',
                         choices=['ConvNet', 'Res12', 'Res18', 'WRN'])
     parser.add_argument('--dataset', type=str, default='MiniImageNet',
-                        choices=['MiniImageNet', 'TieredImageNet', 'CUB'])
+                        choices=['MiniImageNet', 'TieredImageNet', 'CUB', 'TLUStates'])
+    parser.add_argument('--split_json', type=str, default=None)
+    parser.add_argument('--image_path', type=str, default=None)
+    parser.add_argument('--save_path', type=str, default=None)
     
     parser.add_argument('--way', type=int, default=5)
     parser.add_argument('--eval_way', type=int, default=5)
@@ -180,5 +190,6 @@ def get_command_line_parser():
     parser.add_argument('--log_interval', type=int, default=50)
     parser.add_argument('--eval_interval', type=int, default=1)
     parser.add_argument('--save_dir', type=str, default='./checkpoints')
+    parser.add_argument('--seed', type=int, default=None)
     
     return parser
