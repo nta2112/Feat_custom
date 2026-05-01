@@ -43,7 +43,7 @@ class TLUStates(Dataset):
                 torch.save({'data': self.data, 'label': self.label }, cache_path)
             else:
                 print('* Load cache from {}'.format(cache_path))
-                cache = torch.load(cache_path)
+                cache = torch.load(cache_path, weights_only=False)
                 self.data  = cache['data']
                 self.label = cache['label']
         else:
