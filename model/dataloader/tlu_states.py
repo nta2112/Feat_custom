@@ -17,6 +17,7 @@ class TLUStates(Dataset):
         self.args = args
         self.image_path = args.image_path
         self.split_json = args.split_json
+        im_size = args.orig_imsize
         
         if self.image_path is None or self.split_json is None:
             raise ValueError("image_path and split_json must be provided for TLUStates dataset")
@@ -24,7 +25,29 @@ class TLUStates(Dataset):
         with open(self.split_json, 'r') as f:
             self.split = json.load(f)
 
-        self.data, self.label = self.parse_data()
+        # Caching logic
+        self.use_im_cache = ( im_size != -1 ) 
+        if self.use_im_cache:
+            cache_dir = osp.join(osp.dirname(self.split_json), '.cache')
+            if not osp.exists(cache_dir):
+                os.makedirs(cache_dir)
+            cache_path = osp.join(cache_dir, "{}.{}.{}.pt".format(self.__class__.__name__, setname, im_size))
+            
+            if not osp.exists(cache_path):
+                print('* Cache miss... Preprocessing {}...'.format(setname))
+                data_paths, label = self.parse_data()
+                resize_ = identity if im_size < 0 else transforms.Resize(im_size)
+                self.data = [ resize_(Image.open(path).convert('RGB')) for path in tqdm(data_paths) ]
+                self.label = label
+                print('* Dump cache to {}'.format(cache_path))
+                torch.save({'data': self.data, 'label': self.label }, cache_path)
+            else:
+                print('* Load cache from {}'.format(cache_path))
+                cache = torch.load(cache_path)
+                self.data  = cache['data']
+                self.label = cache['label']
+        else:
+            self.data, self.label = self.parse_data()
         self.num_class = len(set(self.label))
 
         image_size = 84
@@ -90,6 +113,9 @@ class TLUStates(Dataset):
         return len(self.data)
 
     def __getitem__(self, i):
-        path, label = self.data[i], self.label[i]
-        image = self.transform(Image.open(path).convert('RGB'))
+        data, label = self.data[i], self.label[i]
+        if self.use_im_cache:
+            image = self.transform(data)
+        else:
+            image = self.transform(Image.open(data).convert('RGB'))
         return image, label

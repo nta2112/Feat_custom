@@ -39,6 +39,31 @@ class MultiGPUDataloader:
                 done = True
         return
 
+class BatchDataloader:
+    def __init__(self, dataloader, batch_size):
+        self.dataloader = dataloader
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return len(self.dataloader) // self.batch_size
+
+    def __iter__(self):
+        data_iter = iter(self.dataloader)
+        done = False
+
+        while not done:
+            try:
+                output_batch = ([], [])
+                for _ in range(self.batch_size):
+                    batch = next(data_iter)
+                    for i, v in enumerate(batch):
+                        output_batch[i].append(v[None])
+                
+                yield ( torch.cat(_, dim=0) for _ in output_batch )
+            except StopIteration:
+                done = True
+        return
+
 def get_dataloader(args):
     if args.dataset == 'MiniImageNet':
         # Handle MiniImageNet
@@ -89,6 +114,11 @@ def get_dataloader(args):
                             batch_sampler=test_sampler,
                             num_workers=args.num_workers,
                             pin_memory=True)    
+
+    if args.batch_size > 1:
+        train_loader = BatchDataloader(train_loader, args.batch_size)
+        # We usually don't batch val/test episodes to keep evaluation consistent
+        # but if you want to, you can do it here too.
 
     return train_loader, val_loader, test_loader
 

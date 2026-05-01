@@ -33,6 +33,10 @@ class FSLTrainer(Trainer):
         label = torch.arange(args.way, dtype=torch.int16).repeat(args.query)
         label_aux = torch.arange(args.way, dtype=torch.int8).repeat(args.shot + args.query)
         
+        if args.batch_size > 1:
+            label = label.repeat(args.batch_size)
+            label_aux = label_aux.repeat(args.batch_size)
+
         label = label.type(torch.LongTensor)
         label_aux = label_aux.type(torch.LongTensor)
         
