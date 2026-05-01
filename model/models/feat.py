@@ -119,8 +119,8 @@ class FEAT(FewShotModel):
         
         # for regularization
         if self.training:
-            aux_task = torch.cat([support.view(1, self.args.shot, self.args.way, emb_dim), 
-                                  query.view(1, self.args.query, self.args.way, emb_dim)], 1) # T x (K+Kq) x N x d
+            aux_task = torch.cat([support.view(num_batch, self.args.shot, self.args.way, emb_dim), 
+                                  query.view(num_batch, self.args.query, self.args.way, emb_dim)], 1) # T x (K+Kq) x N x d
             num_query = np.prod(aux_task.shape[1:3])
             aux_task = aux_task.permute([0, 2, 1, 3])
             aux_task = aux_task.contiguous().view(-1, self.args.shot + self.args.query, emb_dim)
