@@ -53,7 +53,7 @@ class FewShotModel(nn.Module):
         else:
             # feature extraction
             if x.dim() == 4:
-                x = x.unsqueeze(0)
+                x = x.unsqueeze(0) # (1, ni, C, H, W)
 
             nb, ni, c, h, w = x.shape
             instance_embs = self.encoder(x.view(-1, c, h, w))
