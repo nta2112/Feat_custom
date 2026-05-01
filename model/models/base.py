@@ -26,12 +26,25 @@ class FewShotModel(nn.Module):
 
     def split_instances(self, data):
         args = self.args
+        nb = data.shape[0]
+        ni = data.shape[1]
         if self.training:
-            return  (torch.Tensor(np.arange(args.way*args.shot)).long().view(1, args.shot, args.way), 
-                     torch.Tensor(np.arange(args.way*args.shot, args.way * (args.shot + args.query))).long().view(1, args.query, args.way))
+            way, shot, query = args.way, args.shot, args.query
         else:
-            return  (torch.Tensor(np.arange(args.eval_way*args.eval_shot)).long().view(1, args.eval_shot, args.eval_way), 
-                     torch.Tensor(np.arange(args.eval_way*args.eval_shot, args.eval_way * (args.eval_shot + args.eval_query))).long().view(1, args.eval_query, args.eval_way))
+            way, shot, query = args.eval_way, args.eval_shot, args.eval_query
+            
+        s_idx = torch.arange(way * shot).view(1, shot, way)
+        q_idx = torch.arange(way * shot, way * (shot + query)).view(1, query, way)
+        
+        offsets = torch.arange(nb).view(nb, 1, 1) * ni
+        s_idx = (s_idx + offsets).long()
+        q_idx = (q_idx + offsets).long()
+        
+        if data.is_cuda:
+            s_idx = s_idx.cuda()
+            q_idx = q_idx.cuda()
+            
+        return s_idx, q_idx
 
     def forward(self, x, get_feature=False):
         if get_feature:
@@ -39,9 +52,9 @@ class FewShotModel(nn.Module):
             return self.encoder(x)
         else:
             # feature extraction
-            x = x.squeeze(0)
-            instance_embs = self.encoder(x)
-            num_inst = instance_embs.shape[0]
+            nb, ni, c, h, w = x.shape
+            instance_embs = self.encoder(x.view(-1, c, h, w))
+            
             # split support query set for few-shot data
             support_idx, query_idx = self.split_instances(x)
             if self.training:
